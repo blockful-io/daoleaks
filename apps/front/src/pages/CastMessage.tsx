@@ -4,9 +4,10 @@ import { AlertTriangle, ArrowLeft, MessageCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAppKitAccount } from '@reown/appkit/react'
 import { useEnsName } from 'wagmi'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Header from '@/components/Header'
 import { VotingPowerBadge, getRandomVotingPowerTier } from '@/components/VotingPowerBadge'
+import { useSignMessage } from '@/lib/proof/use-sign-message'
 
 export default function CastMessage() {
   const navigate = useNavigate()
@@ -24,20 +25,54 @@ export default function CastMessage() {
   
   const [message, setMessage] = useState('')
 
+  // Setup message signing with domain parameters for DAO Leaks
+  const { 
+    signMessage, 
+    signature, 
+    isLoading: isSigning, 
+    error: signError 
+  } = useSignMessage({
+    name: 'DAO Leaks',
+    version: '1',
+    chainId: 1, // Ethereum mainnet
+    verifyingContract: '0x0000000000000000000000000000000000000000' as `0x${string}` // Placeholder contract address
+  })
+
+  // Log signature when it becomes available
+  useEffect(() => {
+    if (signature) {
+      console.log('Message signature:', signature)
+    }
+  }, [signature])
+
+  // Navigate back after successful signing
+  useEffect(() => {
+    if (signature) {
+      console.log('Message successfully signed! Navigating back...')
+      // Small delay to ensure user sees the signing success
+      setTimeout(() => {
+        navigate('/')
+      }, 1500)
+    }
+  }, [signature, navigate])
+
+  // Log signing errors
+  useEffect(() => {
+    if (signError) {
+      console.error('Signing error:', signError)
+    }
+  }, [signError])
+
   // Mock function to determine ENS voting power - in real app this would check actual ENS holdings
   const userTier = getRandomVotingPowerTier()
 
   const handleCastMessage = () => {
     if (!message.trim()) return
     
-    // Here you would implement the actual message casting logic
-    console.log('Casting message:', message)
-    
-    // For now, just navigate back to home
-    navigate('/')
+    // Sign the message using EIP-712 typed data
+    console.log('Signing message:', message)
+    signMessage(message)
   }
-
-
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
@@ -132,12 +167,17 @@ export default function CastMessage() {
           {/* Cast Button */}
           <Button
             onClick={handleCastMessage}
-            disabled={!message.trim() || !isConnected}
+            disabled={!message.trim() || !isConnected || isSigning}
             className="w-full bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-700 disabled:text-gray-400"
             size="lg"
           >
             <MessageCircle className="w-5 h-5 mr-2" />
-            {!isConnected ? 'Connect Wallet to Cast' : 'Cast Anonymous Message'}
+            {!isConnected 
+              ? 'Connect Wallet to Cast' 
+              : isSigning 
+                ? 'Signing Message...' 
+                : 'Cast Anonymous Message'
+            }
           </Button>
 
           {/* Privacy Notice */}

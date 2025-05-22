@@ -26,9 +26,8 @@ export function useSignMessage({ name, version, chainId, verifyingContract }: { 
     /**
      * Sign a message using EIP-712 typed data
      * @param message The message to sign
-     * @returns The signature
      */
-    const signMessage = async (message: string) => {
+    const signMessage = (message: string) => {
         const value = {
             message
         };
@@ -39,10 +38,18 @@ export function useSignMessage({ name, version, chainId, verifyingContract }: { 
             primaryType: 'Message',
             message: value
         });
+    };
 
-        const publicKey = await signatureUtils.recoverPublicKey(signature as `0x${string}`, getMessageHash(message));
-
-        return { signature, publicKey };
+    /**
+     * Recover public key from current signature and message
+     * @param message The original message that was signed
+     * @returns The recovered public key if signature exists
+     */
+    const recoverPublicKeyFromSignature = async (message: string): Promise<string | null> => {
+        if (!signature) return null;
+        
+        const messageHash = getMessageHash(message);
+        return await signatureUtils.recoverPublicKey(signature, messageHash);
     };
 
     /**
@@ -66,7 +73,8 @@ export function useSignMessage({ name, version, chainId, verifyingContract }: { 
         signature,
         getMessageHash,
         isLoading: isPending,
-        error
+        error,
+        recoverPublicKeyFromSignature
     };
 }
 
