@@ -68,10 +68,16 @@ console.log('wagmiAdapter', wagmiAdapter.wagmiConfig);
 // 5. Create modal
 createAppKit({
   adapters: [wagmiAdapter],
-  networks: [mainnet, base, baseSepolia],
+  networks: [mainnet, base, baseSepolia, anvil],
   projectId,
   features: {
-    analytics: false // Optional - defaults to your Cloud configuration
+    analytics: false, // Optional - defaults to your Cloud configuration
+    email: false, // Disable email login
+    socials: false, // Disable social logins (Google, Apple, etc.)
+    onramp: false, // Disable "Buy crypto" feature
+    swaps: false, // Disable "Swap" feature
+    send: false, // Disable "Send" feature
+    history: false // Disable "Activity" feature
   },
   customRpcUrls,
 })

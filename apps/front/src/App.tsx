@@ -1,8 +1,8 @@
-import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Clock, TrendingUp, Shield } from 'lucide-react'
+import { Clock, TrendingUp, Shield, Wifi } from 'lucide-react'
+import { useAppKit, useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react'
 
 // Mock data for demonstration
 const mockPosts = [
@@ -36,7 +36,9 @@ const mockPosts = [
 ]
 
 function App() {
-  const [selectedFilter, setSelectedFilter] = useState('all')
+  const { open } = useAppKit()
+  const { isConnected, address } = useAppKitAccount()
+  const { caipNetwork } = useAppKitNetwork()
 
   const getVotingPowerColor = (votingPower: string) => {
     if (votingPower.includes('>50k')) {
@@ -45,6 +47,16 @@ function App() {
       return 'bg-orange-500/10 text-orange-600 border-orange-500/20'
     } else {
       return 'bg-gray-500/10 text-gray-600 border-gray-500/20'
+    }
+  }
+
+  const handleConnect = () => {
+    if (isConnected) {
+      // Open account view if already connected
+      open({ view: 'Account' })
+    } else {
+      // Open connect view to connect wallet
+      open({ view: 'Connect' })
     }
   }
 
@@ -61,9 +73,24 @@ function App() {
                 </div>
                 <h1 className="text-xl font-bold text-white">DAO_leaks</h1>
               </div>
+              {isConnected && caipNetwork && (
+                <Badge variant="outline" className="bg-gray-800/50 border-gray-700 text-gray-300">
+                  <Wifi className="w-3 h-3 mr-1" />
+                  {caipNetwork.name}
+                </Badge>
+              )}
             </div>
-            <Button className="bg-green-600 hover:bg-green-700 text-white">
-              Connect
+            <Button 
+              onClick={handleConnect}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {isConnected ? (
+                <>
+                  {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Account'}
+                </>
+              ) : (
+                'Connect'
+              )}
             </Button>
           </div>
         </div>
@@ -71,6 +98,23 @@ function App() {
 
              {/* Main Content */}
        <main className="container mx-auto px-4 py-6 max-w-4xl">
+         {/* Connection Status */}
+         {isConnected && (
+           <div className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+             <div className="flex items-center justify-between">
+               <div>
+                 <h3 className="text-green-400 font-medium">Wallet Connected</h3>
+                 <p className="text-sm text-gray-300">
+                   {address && `${address.slice(0, 10)}...${address.slice(-8)}`}
+                   {caipNetwork && ` • ${caipNetwork.name}`}
+                 </p>
+               </div>
+               <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                 Connected
+               </Badge>
+             </div>
+           </div>
+         )}
 
                  {/* Posts Feed */}
          <div className="space-y-4">
