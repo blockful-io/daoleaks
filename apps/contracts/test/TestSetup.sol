@@ -83,7 +83,7 @@ contract TestSetup is Test {
         // Deploy DaoLeaks with the verifiers
         address targetAddress = address(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266); // Your desired address
 
-        bytes memory args = abi.encode(verifiers, getExpectedStorageRoot());
+        bytes memory args = abi.encode(verifiers, getExpectedStorageRoot(), 1, block.timestamp);
     
         deployCodeTo("DaoLeaks.sol", args, targetAddress);
         daoLeaks = DaoLeaks(targetAddress);

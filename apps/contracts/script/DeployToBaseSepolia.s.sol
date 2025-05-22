@@ -26,10 +26,12 @@ import {HonkVerifier as HonkVerifierDepth20} from "../src/verifiers/DaoLeaksDept
 
 import {DaoLeaks} from "../src/DaoLeaks.sol";
 
-contract DeployToStaging is Script {
-    function run(bytes32 storageRoot) public {
+contract DeployToBaseSepolia is Script {
+    function run() public {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         // Get storage root from command line arguments
-        vm.startBroadcast();
+        vm.startBroadcast(deployerPrivateKey);
+        
         // Create array of verifier addresses
         address[] memory verifiers = new address[](20);
         verifiers[0] = address(new HonkVerifierDepth1());
@@ -54,9 +56,9 @@ contract DeployToStaging is Script {
         verifiers[19] = address(new HonkVerifierDepth20());
 
         // Deploy DaoLeaks contract with verifiers and storage root
-        DaoLeaks daoLeaks = new DaoLeaks(verifiers, storageRoot, 1, block.timestamp);
+        DaoLeaks daoLeaks = new DaoLeaks(verifiers, 0xf883ffc73173eb8bfa44647f8c397bc7829447a62a577fd6d90dda0b9c38666b, 1, block.timestamp);
         
-        console.log("DaoLeaks deployed at:", address(daoLeaks));
+        console.log("DaoLeaks deployed to Base Sepolia at:", address(daoLeaks));
 
         vm.stopBroadcast();
     }

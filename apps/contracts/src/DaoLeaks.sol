@@ -3,7 +3,6 @@ pragma solidity >=0.8.21;
 
 import {HonkVerifier} from "./verifiers/DaoLeaksDepth1.sol";
 
-import {console} from "forge-std/console.sol";
 
 contract DaoLeaks {
     // State variables
@@ -24,15 +23,26 @@ contract DaoLeaks {
 
     mapping(uint8 => uint224) public votingPowerLevels;
 
-    bytes32 public storageRoot;
+    struct StorageRoot {
+        bytes32 storageRoot;
+        uint256 blockNumber;
+        uint256 timestamp;
+    }
+
+    mapping(bytes32 => StorageRoot) public storageRoots;
+
+    bytes32 public lastStorageRoot;
+    uint256 public storageRootMaxAge = 86400;
 
     // Constructor
-    constructor(address[] memory _verifiers, bytes32 _storageRoot) {
+    constructor(address[] memory _verifiers, bytes32 _storageRoot, uint256 _blockNumber, uint256 _timestamp) {
         for (uint256 i = 0; i < _verifiers.length; i++) {
             verifiers.push(HonkVerifier(_verifiers[i]));
         }
 
-        storageRoot = _storageRoot;
+        lastStorageRoot = _storageRoot;
+        storageRoots[_storageRoot] =
+            StorageRoot({storageRoot: _storageRoot, blockNumber: _blockNumber, timestamp: _timestamp});
         votingPowerLevels[0] = 1_000 * 10 ** 18;
         votingPowerLevels[1] = 10_000 * 10 ** 18;
         votingPowerLevels[2] = 50_000 * 10 ** 18;
@@ -56,7 +66,7 @@ contract DaoLeaks {
     // Functions
 
     // Helper function to generate public inputs
-    function generatePublicInputs(string memory message, uint224 votingPowerLevel)
+    function generatePublicInputs(string memory message, uint224 votingPowerLevel, bytes32 storageRoot)
         public
         view
         returns (bytes32[] memory)
@@ -87,11 +97,22 @@ contract DaoLeaks {
     }
 
     // When someone posts a message: proof, message, voting power level
-    function postMessage(bytes calldata proof, string memory message, uint8 votingPowerLevel, uint256 storageProofDepth)
-        public
-    {
+    function postMessage(
+        bytes calldata proof,
+        string memory message,
+        uint8 votingPowerLevel,
+        uint256 storageProofDepth,
+        bytes32 storageRoot
+    ) public {
+        // Check if the storage root is too old
+        // This also checks if the storage root exists for free
+        StorageRoot memory rootData = storageRoots[storageRoot];
+        if (rootData.timestamp + storageRootMaxAge < block.timestamp) {
+            revert("Storage root is too old");
+        }
+
         // Generate public inputs from message and voting power
-        bytes32[] memory publicInputs = generatePublicInputs(message, votingPowerLevels[votingPowerLevel]);
+        bytes32[] memory publicInputs = generatePublicInputs(message, votingPowerLevels[votingPowerLevel], storageRoot);
 
         // Verify the proof
         verifiers[storageProofDepth - 1].verify(proof, publicInputs);
@@ -153,5 +174,25 @@ contract DaoLeaks {
 
     function getVotingPowerLevel(uint8 level) public view returns (uint224) {
         return votingPowerLevels[level];
+    }
+
+    // add new storage root
+    // TODO: PUBLIC FOR HACKATHON, MUST BE PROPER ORACLE FOR PROD
+    function addStorageRoot(bytes32 storageRoot, uint256 blockNumber, uint256 timestamp) public {
+        storageRoots[storageRoot] =
+            StorageRoot({storageRoot: storageRoot, blockNumber: blockNumber, timestamp: timestamp});
+        lastStorageRoot = storageRoot;
+    }
+
+    // get storage root by index
+    function getStorageRoot(bytes32 storageRoot) public view returns (bytes32, uint256, uint256) {
+        StorageRoot memory rootData = storageRoots[storageRoot];
+        return (rootData.storageRoot, rootData.blockNumber, rootData.timestamp);
+    }
+
+    // get total number of storage roots
+    function getLastStorageRoot() public view returns (bytes32, uint256, uint256) {
+        StorageRoot memory rootData = storageRoots[lastStorageRoot];
+        return (rootData.storageRoot, rootData.blockNumber, rootData.timestamp);
     }
 }

@@ -23,7 +23,7 @@ contract DaoLeaksTest is TestSetup {
         // emit MessagePosted(message, votingPowerLevel, block.timestamp);
 
         // Post the message
-        daoLeaks.postMessage(proof, message, votingPowerLevel, storageProofDepth);
+        daoLeaks.postMessage(proof, message, votingPowerLevel, storageProofDepth, getExpectedStorageRoot());
 
         // Get all messages and verify the first one
         DaoLeaks.Message[] memory messages = daoLeaks.getMessages(0, 1);
@@ -41,7 +41,7 @@ contract DaoLeaksTest is TestSetup {
         // Generate inputs using our function
         string memory message = "Signed by Alice";
         uint224 votingPower = daoLeaks.getVotingPowerLevel(0);
-        bytes32 storageRoot = daoLeaks.storageRoot();
+        (bytes32 storageRoot, , ) = daoLeaks.getLastStorageRoot();
         
         // Log expected values for debugging
         console.log("Expected Storage Root:");
@@ -63,7 +63,7 @@ contract DaoLeaksTest is TestSetup {
         console.log("Expected Voting Power:");
         console.logBytes32(expectedPower);
         
-        bytes32[] memory generatedInputs = daoLeaks.generatePublicInputs(message, votingPower);
+        bytes32[] memory generatedInputs = daoLeaks.generatePublicInputs(message, votingPower, storageRoot);
         
         // Reconstruct the 3 original values from the 96 generated inputs
         bytes memory genRootBytes = new bytes(32);
