@@ -1,0 +1,67 @@
+{
+  "name": "DaoLeak Development Environment",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  // Configure tool-specific properties
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "dev.containers.copyGitConfig": true
+      },
+      "extensions": [
+        "ms-vscode.vscode-json",
+        "ms-python.python",
+        "ms-vscode.cpptools"
+      ]
+    }
+  },
+  // Set container features
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": false,
+      "installOhMyZsh": true,
+      "upgradePackages": true
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "ppa": true,
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "nodeGypDependencies": true,
+      "version": "lts"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    }
+  },
+  // Forward ports - add any ports your app uses
+  "forwardPorts": [
+    3000,
+    4173,
+    5173,
+    8000,
+    8545
+  ],
+  // Use 'postCreateCommand' to run commands after the container is created
+  // "postCreateCommand": "git config --global core.editor 'code --wait'",
+  // Use 'postStartCommand' to run commands after the container starts
+  // "postStartCommand": "",
+  // Configure container user
+  "remoteUser": "vscode",
+  // // Mount the local filesystem
+  "mounts": [
+    "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"
+  ],
+  // Configure container environment
+  "containerEnv": {
+    "WORKSPACE_FOLDER": "${containerWorkspaceFolder}"
+  },
+  // Lifecycle scripts
+  "onCreateCommand": {
+    "setup": "echo 'Container created successfully!'"
+  }
+}
