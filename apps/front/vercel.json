@@ -1,0 +1,18 @@
+{
+  "buildCommand": "pnpm run build",
+  "outputDirectory": "dist",
+  "devCommand": "pnpm run dev",
+  "installCommand": "pnpm install",
+  "framework": "vite",
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "@vercel/node@5.1.16"
+    }
+  },
+  "rewrites": [
+    { 
+      "source": "/((?!api).)*", 
+      "destination": "/" 
+    }
+  ]
+}

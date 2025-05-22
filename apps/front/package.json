@@ -2,12 +2,14 @@
   "name": "front",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev-vercel": "vercel dev",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy-preview": "vercel build && vercel --prebuilt",
+    "deploy-prod": "vercel build && vercel --prod --prebuilt"
   },
   "dependencies": {
     "@aztec/bb.js": "0.82.2",
@@ -25,6 +27,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.511.0",
+    "@vercel/node": "^5.1.16",
     "neverthrow": "^8.2.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -50,6 +53,7 @@
     "rollup-plugin-node-polyfills": "^0.2.1",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.30.1",
+    "vercel": "^42.1.1",
     "vite": "^6.3.5"
   }
 }
