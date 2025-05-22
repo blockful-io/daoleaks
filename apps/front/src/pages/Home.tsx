@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Clock, MessageCircle, Loader2 } from 'lucide-react'
+import { Clock, MessageCircle, Loader2, Filter } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Header from '@/components/Header'
 import { VotingPowerBadge, type VotingPowerTier } from '@/components/VotingPowerBadge'
@@ -12,7 +12,7 @@ const mockPosts = [
     id: 1,
     votingPower: '>50k' as VotingPowerTier,
     timeAgo: '5 hr. ago',
-    content: "In the ever-evolving landscape of decentralized technology, it's crucial to acknowledge the transformative potential of Web3. This new paradigm empowers users by shifting control from centralized entities to individuals, fostering a more equitable digital ecosystem. As we navigate this transition, the importance of community-driven governance and transparency cannot be overstated.",
+    content: "🥲 In the ever-evolving landscape of decentralized technology, it's crucial to acknowledge the transformative potential of Web3. This new paradigm empowers users by shifting control from centralized entities to individuals, fostering a more equitable digital ecosystem. As we navigate this transition, the importance of community-driven governance and transparency cannot be overstated.",
   },
   {
     id: 2,
@@ -132,13 +132,44 @@ const mockPosts = [
 
 const POSTS_PER_PAGE = 5
 
+type FilterTier = '>1k' | '>10k' | '>50k'
+
 export default function Home() {
   const navigate = useNavigate()
   const [displayedPosts, setDisplayedPosts] = useState(mockPosts.slice(0, POSTS_PER_PAGE))
   const [currentPage, setCurrentPage] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+  const [selectedFilters, setSelectedFilters] = useState<FilterTier[]>(['>1k', '>10k', '>50k'])
   const loadingRef = useRef<HTMLDivElement>(null)
+
+  const getFilteredPosts = useCallback(() => {
+    if (selectedFilters.length === 0) {
+      return mockPosts
+    }
+    return mockPosts.filter(post => selectedFilters.includes(post.votingPower as FilterTier))
+  }, [selectedFilters])
+
+  const toggleFilter = (filter: FilterTier) => {
+    setSelectedFilters(prev => {
+      const newFilters = prev.includes(filter) 
+        ? prev.filter(f => f !== filter)
+        : [...prev, filter]
+      
+      // Reset pagination when filters change
+      setCurrentPage(1)
+      setHasMore(true)
+      
+      return newFilters
+    })
+  }
+
+  // Update displayed posts when filters change
+  useEffect(() => {
+    const filteredPosts = getFilteredPosts()
+    setDisplayedPosts(filteredPosts.slice(0, POSTS_PER_PAGE))
+    setHasMore(filteredPosts.length > POSTS_PER_PAGE)
+  }, [selectedFilters, getFilteredPosts])
 
   const loadMorePosts = useCallback(() => {
     if (isLoading || !hasMore) return
@@ -147,10 +178,11 @@ export default function Home() {
     
     // Simulate API delay
     setTimeout(() => {
+      const filteredPosts = getFilteredPosts()
       const nextPage = currentPage + 1
       const startIndex = (nextPage - 1) * POSTS_PER_PAGE
       const endIndex = startIndex + POSTS_PER_PAGE
-      const newPosts = mockPosts.slice(startIndex, endIndex)
+      const newPosts = filteredPosts.slice(startIndex, endIndex)
       
       if (newPosts.length === 0) {
         setHasMore(false)
@@ -161,7 +193,7 @@ export default function Home() {
       
       setIsLoading(false)
     }, 800) // Simulate network delay
-  }, [currentPage, isLoading, hasMore])
+  }, [currentPage, isLoading, hasMore, getFilteredPosts])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -191,6 +223,31 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
       <Header />
+
+      {/* Filters */}
+      <div className="container mx-auto px-4 py-4 max-w-4xl">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-gray-400" />
+            <span className="text-sm text-gray-400 font-medium">Filter by voting power:</span>
+          </div>
+          
+          {(['>1k', '>10k', '>50k'] as FilterTier[]).map((filter) => (
+            <Button
+              key={filter}
+              variant={selectedFilters.includes(filter) ? "default" : "outline"}
+              size="sm"
+              onClick={() => toggleFilter(filter)}
+              className={selectedFilters.includes(filter)
+                ? "bg-green-600 hover:bg-green-700 text-white border-green-600" 
+                : "border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white"
+              }
+            >
+              {filter}
+            </Button>
+          ))}
+        </div>
+      </div>
 
        {/* Main Content */}
        <main className="container mx-auto px-4 py-6 max-w-4xl pb-32">
