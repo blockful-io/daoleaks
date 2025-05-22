@@ -14,7 +14,7 @@ const types = {
  * Hooks for signing a message using wagmi
  */
 export function useSignMessage({ name, version, chainId, verifyingContract }: { name: string, version: string, chainId: number, verifyingContract: `0x${string}` }) {
-    const { isPending, signTypedData, data: signature, error } = useSignTypedData();
+    const { isPending, signTypedData, signTypedDataAsync, data: signature, error } = useSignTypedData();
 
     const domain = {
         name,
@@ -26,13 +26,14 @@ export function useSignMessage({ name, version, chainId, verifyingContract }: { 
     /**
      * Sign a message using EIP-712 typed data
      * @param message The message to sign
+     * @returns Promise that resolves with the signature
      */
-    const signMessage = (message: string) => {
+    const signMessage = async (message: string): Promise<string> => {
         const value = {
             message
         };
 
-        signTypedData({
+        return await signTypedDataAsync({
             domain,
             types,
             primaryType: 'Message',
