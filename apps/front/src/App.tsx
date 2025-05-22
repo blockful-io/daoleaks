@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Clock, TrendingUp, Shield, Wifi } from 'lucide-react'
-import { useAppKit, useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react'
+import { Clock, TrendingUp, Shield } from 'lucide-react'
+import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
+import { useEnsName } from 'wagmi'
 
 // Mock data for demonstration
 const mockPosts = [
@@ -38,7 +39,13 @@ const mockPosts = [
 function App() {
   const { open } = useAppKit()
   const { isConnected, address } = useAppKitAccount()
-  const { caipNetwork } = useAppKitNetwork()
+  const { data: ensName } = useEnsName({
+    address: address as `0x${string}`,
+    chainId: 1, // ENS is on Ethereum mainnet
+    query: {
+      enabled: !!address, // Only query when address exists
+    }
+  })
 
   const getVotingPowerColor = (votingPower: string) => {
     if (votingPower.includes('>50k')) {
@@ -73,12 +80,6 @@ function App() {
                 </div>
                 <h1 className="text-xl font-bold text-white">DAO_leaks</h1>
               </div>
-              {isConnected && caipNetwork && (
-                <Badge variant="outline" className="bg-gray-800/50 border-gray-700 text-gray-300">
-                  <Wifi className="w-3 h-3 mr-1" />
-                  {caipNetwork.name}
-                </Badge>
-              )}
             </div>
             <Button 
               onClick={handleConnect}
@@ -86,7 +87,7 @@ function App() {
             >
               {isConnected ? (
                 <>
-                  {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Account'}
+                  {ensName || (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Account')}
                 </>
               ) : (
                 'Connect'
@@ -98,23 +99,6 @@ function App() {
 
              {/* Main Content */}
        <main className="container mx-auto px-4 py-6 max-w-4xl">
-         {/* Connection Status */}
-         {isConnected && (
-           <div className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-             <div className="flex items-center justify-between">
-               <div>
-                 <h3 className="text-green-400 font-medium">Wallet Connected</h3>
-                 <p className="text-sm text-gray-300">
-                   {address && `${address.slice(0, 10)}...${address.slice(-8)}`}
-                   {caipNetwork && ` • ${caipNetwork.name}`}
-                 </p>
-               </div>
-               <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                 Connected
-               </Badge>
-             </div>
-           </div>
-         )}
 
                  {/* Posts Feed */}
          <div className="space-y-4">
