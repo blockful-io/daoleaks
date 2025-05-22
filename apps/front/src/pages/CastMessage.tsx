@@ -36,7 +36,7 @@ export default function CastMessage() {
   const [proofSuccess, setProofSuccess] = useState(false)
 
   // Environment variables for storage proof
-  const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS as `0x${string}`
+  const contractAddress = import.meta.env.VITE_TOKEN_CONTRACT_ADDRESS as `0x${string}`
   const mappingSlot = parseInt(import.meta.env.VITE_MAPPING_SLOT || '0')
   const blockNumber = toHex(parseInt(import.meta.env.VITE_BLOCK_NUMBER))
   const rpcUrl = import.meta.env.VITE_RPC_URL
@@ -66,7 +66,7 @@ export default function CastMessage() {
   } = useSignMessage({
     name: 'DAO Leaks',
     version: '1',
-    chainId: 1, // Ethereum mainnet
+    chainId: import.meta.env.VITE_CHAIN_ID as number,
     verifyingContract: '0x0000000000000000000000000000000000000000' as `0x${string}` // Placeholder contract address
   })
 
@@ -148,7 +148,6 @@ export default function CastMessage() {
       const thresholdHex = threshold.toString(16).padStart(56, '0'); // pad to 28 bytes for uint224
       const packedThresholdHex = thresholdHex + "00000000"; // add 4 bytes of zeros for uint32
       const votingPowerThreshold = serialise('0x' + packedThresholdHex, true);
-      console.log('Voting power threshold:', parseInt(toHex(new Uint8Array(votingPowerThreshold))))
       
       // Prepare proof data for the circuit
       const proofData = {
