@@ -31,6 +31,8 @@ for (let depth = 1; depth <= MAX_DEPTH; depth++) {
   console.log(`Generated: ${outputPathMain}`);
   console.log(`Generated: ${outputPathNargo}`);
   
+  let hasError = false;
+  
   try {
     // Compile the code
     console.log(`Compiling for depth ${depth}...`);
@@ -53,6 +55,7 @@ for (let depth = 1; depth <= MAX_DEPTH; depth++) {
 
   } catch (error) {
     console.error(`Compilation failed for depth ${depth}:`, error);
+    hasError = true;
   } finally {
     // Clean up files after compilation
     console.log(`Cleaning up files for depth ${depth}...`);
@@ -64,6 +67,11 @@ for (let depth = 1; depth <= MAX_DEPTH; depth++) {
       fs.unlinkSync(outputPathNargo);
       console.log(`Deleted: ${outputPathNargo}`);
     }
+  }
+
+  if (hasError) {
+    console.error(`Compilation failed for depth ${depth}`);
+    process.exit(1);
   }
   
   console.log(`Completed processing for depth ${depth}\n`);
