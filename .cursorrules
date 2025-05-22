@@ -1,0 +1,14 @@
+Start all chats with 🤖
+
+## Stack
+•⁠  pnpm (never use npm or yarn)
+•⁠  Vite
+•⁠  React 19
+•⁠  Typescript
+•⁠  TailwindCSS
+•⁠  Shadcn/UI
+
+## Misc
+•⁠  File structure: the Vite app is located inside src
+•⁠  use pnpx shadcn@latest add <component-name> to add shadcn components (don't use shadcn-ui as it is deprecated)
+•⁠  Front it mobile-first, using TailwindCSS
