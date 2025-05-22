@@ -86,6 +86,23 @@ export async function getStorageProof(client: PublicClient, contractAddress: `0x
     return ok(arrayLengthRes);
 }
 
+
+/**
+ * @notice Retrieves storage proof for the latest checkpoint of an account from a contract's mapping of dynamic arrays
+ * @dev This function performs multiple storage proof queries:
+ *      1. Gets proof for the mapping slot to determine array length
+ *      2. Calculates the storage location of the last array element (latest checkpoint)
+ *      3. Gets proof for that checkpoint value
+ *      The function assumes the contract stores account data as mapping(address => Checkpoint[])
+ * @param client The PublicClient instance for making RPC calls
+ * @param accountAddress The account address to get checkpoint data for
+ * @param contractAddress The contract address containing the mapping
+ * @param mappingSlot The storage slot number where the mapping is stored in the contract
+ * @param blockNumber The block number to query the storage state at (in hex format)
+ * @return Promise that resolves to either:
+ *         - Success: Object containing storage_proof data, depth, and padded values
+ *         - Error: When array is empty, checkpoint uninitialized, or proof not found
+ */
 export async function getStorageProofForAccount(client: PublicClient, accountAddress: `0x${string}`, contractAddress: `0x${string}`, mappingSlot: number, blockNumber: `0x${string}`) {
     const calculatedMappingSlotForKey = calculateMappingSlot(accountAddress, mappingSlot);
     console.log('blockNumber', blockNumber);

@@ -51,7 +51,7 @@ export function useENSVotingPower(address?: `0x${string}`): ENSVotingPowerResult
     return undefined // No tier if less than 1000 voting power
   }
 
-  const isEligible = votingPower !== undefined && votingPower >= 1000
+  const isEligible = votingPower !== undefined && votingPower >= 500
   const tier = isEligible ? getTierFromVotingPower(votingPower) : undefined
 
   return {
