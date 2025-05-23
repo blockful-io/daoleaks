@@ -3,7 +3,6 @@ import { Card, CardContent } from '@/components/ui/card'
 import { ArrowLeft, MessageCircle, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAppKitAccount } from '@reown/appkit/react'
-import { useEnsName } from 'wagmi'
 import { useState, useEffect, useCallback } from 'react'
 import { createPublicClient, http, toHex, type PublicClient } from 'viem'
 import { baseSepolia } from 'viem/chains'
@@ -19,16 +18,6 @@ import { useMutation } from '@tanstack/react-query'
 export default function CastMessage() {
   const navigate = useNavigate()
   const { isConnected, address } = useAppKitAccount()
-  const { data: ensName } = useEnsName({
-    address: address as `0x${string}`,
-    chainId: 1,
-    query: {
-      enabled: !!address,
-    }
-  })
-  
-  // Suppress unused variable warning - ensName will be used for actual ENS verification
-  void ensName
   
   const [message, setMessage] = useState('')
   const [isGeneratingStorageProof, setIsGeneratingStorageProof] = useState(false)
