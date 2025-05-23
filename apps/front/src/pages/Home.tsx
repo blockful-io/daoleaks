@@ -14,7 +14,7 @@ type FilterTier = VotingPowerTier
 
 export default function Home() {
   const navigate = useNavigate()
-  const [selectedFilters, setSelectedFilters] = useState<FilterTier[]>(['>100', '>1k', '>10k', '>50k'])
+  const [selectedFilters, setSelectedFilters] = useState<FilterTier[]>(['>1k', '>10k', '>50k'])
   const loadingRef = useRef<HTMLDivElement>(null)
 
   // Use the contract hook
@@ -106,7 +106,7 @@ export default function Home() {
             <span className="text-sm text-gray-400 font-medium">Filter by voting power:</span>
           </div>
           
-          {(['>100', '>1k', '>10k', '>50k'] as FilterTier[]).map((filter) => (
+          {(['>1k', '>10k', '>50k'] as FilterTier[]).map((filter) => (
             <Button
               key={filter}
               variant={selectedFilters.includes(filter) ? "default" : "outline"}
