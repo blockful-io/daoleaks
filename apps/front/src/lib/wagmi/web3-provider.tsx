@@ -1,8 +1,7 @@
-
 import { createAppKit } from '@reown/appkit/react'
 
 import { WagmiProvider } from 'wagmi'
-import { baseSepolia } from 'viem/chains'
+import { baseSepolia, mainnet } from 'viem/chains'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
 import type { CaipNetworkId } from '@reown/appkit'
@@ -42,14 +41,14 @@ const projectId = '37cbaafff91120f7e1424b6832caa462'
 type CustomRpcUrlMap = Record<CaipNetworkId, {url: string}[]>
 
 const customRpcUrls: CustomRpcUrlMap = {
-  // 'eip155:1': [{ url: 'https://eth-mainnet.g.alchemy.com/v2/864ae0IHj8rlKM2OHei4_1CzTV3xUdB5' }],
+  'eip155:1': [{ url: 'https://eth-mainnet.g.alchemy.com/v2/864ae0IHj8rlKM2OHei4_1CzTV3xUdB5' }],
   // 'eip155:8453': [{ url: 'https://base-mainnet.g.alchemy.com/v2/864ae0IHj8rlKM2OHei4_1CzTV3xUdB5' }],
   'eip155:84532': [{ url: 'https://base-sepolia.g.alchemy.com/v2/864ae0IHj8rlKM2OHei4_1CzTV3xUdB5' }],
   // 'eip155:31337': [{ url: 'http://127.0.0.1:8545' }]
 }
 
 // 4. Create Wagmi Adapter
-const networks = [baseSepolia]
+const networks = [mainnet, baseSepolia]
 
 export const wagmiAdapter = new WagmiAdapter({
   networks,
@@ -66,7 +65,7 @@ console.log('wagmiAdapter', wagmiAdapter.wagmiConfig);
 // 5. Create modal
 createAppKit({
   adapters: [wagmiAdapter],
-  networks: [baseSepolia],
+  networks: [mainnet, baseSepolia],
   projectId,
   features: {
     analytics: false, // Optional - defaults to your Cloud configuration
