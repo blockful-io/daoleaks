@@ -301,13 +301,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       transactions: {
         addStorageRoot: {
           hash: addStorageRootHash,
-          blockNumber: addStorageRootReceipt.blockNumber,
-          gasUsed: addStorageRootReceipt.gasUsed,
+          blockNumber: addStorageRootReceipt.blockNumber.toString(),
+          gasUsed: addStorageRootReceipt.gasUsed.toString(),
         },
         postMessage: {
           hash: postMessageHash,
-          blockNumber: postMessageReceipt.blockNumber,
-          gasUsed: postMessageReceipt.gasUsed,
+          blockNumber: postMessageReceipt.blockNumber.toString(),
+          gasUsed: postMessageReceipt.gasUsed.toString(),
         },
       },
     });
