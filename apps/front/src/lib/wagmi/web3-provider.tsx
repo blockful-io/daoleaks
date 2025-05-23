@@ -65,7 +65,7 @@ console.log('wagmiAdapter', wagmiAdapter.wagmiConfig);
 // 5. Create modal
 createAppKit({
   adapters: [wagmiAdapter],
-  networks: [baseSepolia, mainnet],
+  networks: [baseSepolia],
   projectId,
   features: {
     analytics: false, // Optional - defaults to your Cloud configuration

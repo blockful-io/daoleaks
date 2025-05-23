@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useReadContract } from 'wagmi'
 import { DAOLEAKS_CONTRACT_ADDRESS, DAOLEAKS_ABI, votingPowerToTier } from '../contracts/daoleaks'
 import type { VotingPowerTier } from '@/components/VotingPowerBadge'
+import { baseSepolia } from 'viem/chains'
 
 export interface DaoLeaksMessage {
   id: number
@@ -37,6 +38,7 @@ export function useDaoLeaksMessages({
     address: DAOLEAKS_CONTRACT_ADDRESS,
     abi: DAOLEAKS_ABI,
     functionName: 'getTotalMessages',
+    chainId: baseSepolia.id,
   })
 
   // Fetch all messages at once
@@ -44,6 +46,7 @@ export function useDaoLeaksMessages({
     address: DAOLEAKS_CONTRACT_ADDRESS,
     abi: DAOLEAKS_ABI,
     functionName: 'getMessages',
+    chainId: baseSepolia.id,
     args: [BigInt(0), totalMessages || BigInt(0)],
     query: {
       enabled: !!DAOLEAKS_CONTRACT_ADDRESS && totalMessages !== undefined && totalMessages > 0,
