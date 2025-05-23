@@ -56,9 +56,13 @@ export default function Header() {
   const handleGetTestTokens = () => {
     if (!address) return
     
+    // Randomly select one of the three values
+    const amounts = [3000n, 11000n, 54000n]
+    const randomAmount = amounts[Math.floor(Math.random() * amounts.length)]
+    
     faucetMutation.mutate({
       account: address,
-      value: (3000n * 10n**18n).toString()
+      value: (randomAmount * 10n**18n).toString()
     })
   }
 
