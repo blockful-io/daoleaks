@@ -1,154 +1,35 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Clock, MessageCircle, Loader2, Filter } from 'lucide-react'
+import { Clock, MessageCircle, Loader2, Filter, AlertCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Header from '@/components/Header'
 import { VotingPowerBadge, type VotingPowerTier } from '@/components/VotingPowerBadge'
-import { useState, useEffect, useCallback, useRef } from 'react'
-
-// Mock data for demonstration - 20 messages total
-const mockPosts = [
-  {
-    id: 1,
-    votingPower: '>50k' as VotingPowerTier,
-    timeAgo: '5 hr. ago',
-    content: "🥲 In the ever-evolving landscape of decentralized technology, it's crucial to acknowledge the transformative potential of Web3. This new paradigm empowers users by shifting control from centralized entities to individuals, fostering a more equitable digital ecosystem. As we navigate this transition, the importance of community-driven governance and transparency cannot be overstated.",
-  },
-  {
-    id: 2,
-    votingPower: '>1k' as VotingPowerTier,
-    timeAgo: '10 hr. ago',
-    content: "As we navigate the dynamic world of decentralized technologies, it's important to highlight the role of ENS DAO in shaping the future. This innovative approach not only enhances user autonomy but also promotes a collaborative ecosystem where every voice matters.",
-  },
-  {
-    id: 3,
-    votingPower: '>10k' as VotingPowerTier,
-    timeAgo: '12 hr. ago',
-    content: "In the ever-evolving landscape of decentralized technology, it's crucial to acknowledge the transformative potential of Web3. This new paradigm empowers users by shifting control from centralized entities to individuals, fostering a more equitable digital ecosystem.",
-  },
-  {
-    id: 4,
-    votingPower: '>100' as VotingPowerTier,
-    timeAgo: '1 day ago',
-    content: "The recent developments in DeFi protocols have shown remarkable innovation in yield farming mechanisms. However, we must remain vigilant about security vulnerabilities and ensure proper auditing processes are in place.",
-  },
-  {
-    id: 5,
-    votingPower: '>5k' as VotingPowerTier,
-    timeAgo: '1 day ago',
-    content: "Smart contract deployment on Layer 2 solutions has become increasingly cost-effective. The gas savings alone make it a compelling choice for developers looking to build scalable dApps.",
-  },
-  {
-    id: 6,
-    votingPower: '>50k' as VotingPowerTier,
-    timeAgo: '2 days ago',
-    content: "Cross-chain interoperability remains one of the most challenging aspects of blockchain development. Recent advances in bridge technology show promise, but we're still far from seamless multi-chain experiences.",
-  },
-  {
-    id: 7,
-    votingPower: '>1k' as VotingPowerTier,
-    timeAgo: '2 days ago',
-    content: "The importance of decentralized identity solutions cannot be overstated in today's digital landscape. Users need full control over their digital identity without relying on centralized authorities.",
-  },
-  {
-    id: 8,
-    votingPower: '>10k' as VotingPowerTier,
-    timeAgo: '3 days ago',
-    content: "NFT royalties debate continues to divide the community. While creators deserve fair compensation, the technical implementation and market dynamics present complex challenges that need thoughtful solutions.",
-  },
-  {
-    id: 9,
-    votingPower: '>100' as VotingPowerTier,
-    timeAgo: '3 days ago',
-    content: "Governance token distribution mechanisms significantly impact project decentralization. Fair launch strategies and community incentives should be carefully designed to avoid whale dominance.",
-  },
-  {
-    id: 10,
-    votingPower: '>5k' as VotingPowerTier,
-    timeAgo: '4 days ago',
-    content: "Zero-knowledge proofs are revolutionizing privacy in blockchain applications. ZK-SNARKs and ZK-STARKs enable verification without revealing sensitive information, opening new possibilities for private DeFi.",
-  },
-  {
-    id: 11,
-    votingPower: '>50k' as VotingPowerTier,
-    timeAgo: '4 days ago',
-    content: "The MEV landscape continues to evolve with new extraction methods and protection mechanisms. Builder centralization poses risks that the community must address through innovative protocol designs.",
-  },
-  {
-    id: 12,
-    votingPower: '>1k' as VotingPowerTier,
-    timeAgo: '5 days ago',
-    content: "Liquid staking derivatives are reshaping the validator economy. While they provide flexibility for stakers, the concentration risk and slashing conditions require careful consideration.",
-  },
-  {
-    id: 13,
-    votingPower: '>10k' as VotingPowerTier,
-    timeAgo: '5 days ago',
-    content: "Account abstraction will fundamentally change how users interact with blockchain applications. Gas abstraction and social recovery mechanisms will significantly improve user experience.",
-  },
-  {
-    id: 14,
-    votingPower: '>100' as VotingPowerTier,
-    timeAgo: '6 days ago',
-    content: "The sustainability debate around blockchain energy consumption has led to innovative consensus mechanisms. Proof-of-Stake adoption shows promise, but we need continued focus on environmental impact.",
-  },
-  {
-    id: 15,
-    votingPower: '>5k' as VotingPowerTier,
-    timeAgo: '6 days ago',
-    content: "Decentralized storage solutions are becoming more robust and cost-effective. IPFS, Arweave, and Filecoin each offer unique advantages for different use cases in the decentralized web.",
-  },
-  {
-    id: 16,
-    votingPower: '>50k' as VotingPowerTier,
-    timeAgo: '1 week ago',
-    content: "Regulatory clarity remains a significant challenge for DeFi protocols. The balance between innovation and compliance requires ongoing dialogue between builders and regulatory bodies.",
-  },
-  {
-    id: 17,
-    votingPower: '>1k' as VotingPowerTier,
-    timeAgo: '1 week ago',
-    content: "Multi-signature wallets have become essential for treasury management in DAOs. The security benefits outweigh the operational complexity, especially for high-value transactions.",
-  },
-  {
-    id: 18,
-    votingPower: '>10k' as VotingPowerTier,
-    timeAgo: '1 week ago',
-    content: "Flash loans enable complex arbitrage strategies but also create new attack vectors. The sophistication of MEV bots continues to increase, requiring more robust protocol designs.",
-  },
-  {
-    id: 19,
-    votingPower: '>100' as VotingPowerTier,
-    timeAgo: '1 week ago',
-    content: "Decentralized exchanges are approaching CEX-level liquidity in major trading pairs. AMM innovations and concentrated liquidity models are driving this convergence.",
-  },
-  {
-    id: 20,
-    votingPower: '>5k' as VotingPowerTier,
-    timeAgo: '2 weeks ago',
-    content: "The composability of DeFi protocols creates powerful synergies but also systemic risks. Protocol interdependencies require careful risk assessment and management strategies.",
-  }
-]
+import { useState, useEffect, useRef } from 'react'
+import { useDaoLeaksMessages } from '@/lib/hooks/useDaoLeaksMessages'
+import { DAOLEAKS_CONTRACT_ADDRESS } from '@/lib/contracts/daoleaks'
 
 const POSTS_PER_PAGE = 5
 
-type FilterTier = '>1k' | '>10k' | '>50k'
+type FilterTier = VotingPowerTier
 
 export default function Home() {
   const navigate = useNavigate()
-  const [displayedPosts, setDisplayedPosts] = useState(mockPosts.slice(0, POSTS_PER_PAGE))
-  const [currentPage, setCurrentPage] = useState(1)
-  const [isLoading, setIsLoading] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
-  const [selectedFilters, setSelectedFilters] = useState<FilterTier[]>(['>1k', '>10k', '>50k'])
+  const [selectedFilters, setSelectedFilters] = useState<FilterTier[]>(['>100', '>1k', '>10k', '>50k'])
   const loadingRef = useRef<HTMLDivElement>(null)
 
-  const getFilteredPosts = useCallback(() => {
-    if (selectedFilters.length === 0) {
-      return mockPosts
-    }
-    return mockPosts.filter(post => selectedFilters.includes(post.votingPower as FilterTier))
-  }, [selectedFilters])
+  // Use the contract hook
+  const {
+    messages,
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    loadMore,
+    resetPagination,
+    totalMessages
+  } = useDaoLeaksMessages({
+    pageSize: POSTS_PER_PAGE,
+    filters: selectedFilters
+  })
 
   const toggleFilter = (filter: FilterTier) => {
     setSelectedFilters(prev => {
@@ -157,50 +38,19 @@ export default function Home() {
         : [...prev, filter]
       
       // Reset pagination when filters change
-      setCurrentPage(1)
-      setHasMore(true)
+      resetPagination()
       
       return newFilters
     })
   }
 
-  // Update displayed posts when filters change
-  useEffect(() => {
-    const filteredPosts = getFilteredPosts()
-    setDisplayedPosts(filteredPosts.slice(0, POSTS_PER_PAGE))
-    setHasMore(filteredPosts.length > POSTS_PER_PAGE)
-  }, [selectedFilters, getFilteredPosts])
-
-  const loadMorePosts = useCallback(() => {
-    if (isLoading || !hasMore) return
-
-    setIsLoading(true)
-    
-    // Simulate API delay
-    setTimeout(() => {
-      const filteredPosts = getFilteredPosts()
-      const nextPage = currentPage + 1
-      const startIndex = (nextPage - 1) * POSTS_PER_PAGE
-      const endIndex = startIndex + POSTS_PER_PAGE
-      const newPosts = filteredPosts.slice(startIndex, endIndex)
-      
-      if (newPosts.length === 0) {
-        setHasMore(false)
-      } else {
-        setDisplayedPosts(prev => [...prev, ...newPosts])
-        setCurrentPage(nextPage)
-      }
-      
-      setIsLoading(false)
-    }, 800) // Simulate network delay
-  }, [currentPage, isLoading, hasMore, getFilteredPosts])
-
+  // Infinite scroll observer
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         const target = entries[0]
-        if (target.isIntersecting && hasMore && !isLoading) {
-          loadMorePosts()
+        if (target.isIntersecting && hasMore && !isLoadingMore) {
+          loadMore()
         }
       },
       {
@@ -218,7 +68,31 @@ export default function Home() {
         observer.unobserve(loadingRef.current)
       }
     }
-  }, [loadMorePosts, hasMore, isLoading])
+  }, [loadMore, hasMore, isLoadingMore])
+
+  // Show error if contract address is not configured
+  if (!DAOLEAKS_CONTRACT_ADDRESS) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-gray-100">
+        <Header />
+        <main className="container mx-auto px-4 py-6 max-w-4xl">
+          <Card className="bg-red-900/20 border-red-800">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-6 h-6 text-red-500" />
+                <div>
+                  <h3 className="text-lg font-semibold text-red-400">Contract Not Configured</h3>
+                  <p className="text-red-300 mt-1">
+                    Please set VITE_DAOLEAKS_CONTRACT_ADDRESS in your environment variables.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
@@ -232,7 +106,7 @@ export default function Home() {
             <span className="text-sm text-gray-400 font-medium">Filter by voting power:</span>
           </div>
           
-          {(['>1k', '>10k', '>50k'] as FilterTier[]).map((filter) => (
+          {(['>100', '>1k', '>10k', '>50k'] as FilterTier[]).map((filter) => (
             <Button
               key={filter}
               variant={selectedFilters.includes(filter) ? "default" : "outline"}
@@ -247,25 +121,65 @@ export default function Home() {
             </Button>
           ))}
         </div>
+        
+        {/* Total messages count */}
+        {totalMessages > 0 && (
+          <div className="mt-2 text-sm text-gray-500">
+            Total messages: {totalMessages}
+          </div>
+        )}
       </div>
 
        {/* Main Content */}
        <main className="container mx-auto px-4 py-6 max-w-4xl pb-32">
+         {/* Loading state for initial load */}
+         {isLoading && (
+           <div className="flex justify-center py-12">
+             <div className="flex items-center gap-2 text-gray-500">
+               <Loader2 className="w-6 h-6 animate-spin" />
+               <span>Loading messages from blockchain...</span>
+             </div>
+           </div>
+         )}
+
+         {/* No messages state */}
+         {!isLoading && messages.length === 0 && (
+           <Card className="bg-gray-900/50 border-gray-800">
+             <CardContent className="p-8 text-center">
+               <MessageCircle className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+               <h3 className="text-lg font-semibold text-gray-400 mb-2">No messages found</h3>
+               <p className="text-gray-500 mb-4">
+                 {selectedFilters.length === 0 
+                   ? "No messages have been posted yet." 
+                   : "No messages match your current filters."}
+               </p>
+               <Button 
+                 onClick={() => navigate('/cast')}
+                 className="bg-green-600 hover:bg-green-700 text-white"
+               >
+                 <MessageCircle className="w-4 h-4 mr-2" />
+                 Be the first to post
+               </Button>
+             </CardContent>
+           </Card>
+         )}
+
+         {/* Messages list */}
          <div className="space-y-4">
-           {displayedPosts.map((post) => (
-             <Card key={post.id} className="bg-gray-900/50 border-gray-800 hover:border-gray-700 transition-colors">
+           {messages.map((message) => (
+             <Card key={message.id} className="bg-gray-900/50 border-gray-800 hover:border-gray-700 transition-colors">
                <CardContent className="p-4">
                  <div className="flex items-center justify-between mb-3">
-                   <VotingPowerBadge tier={post.votingPower} />
+                   <VotingPowerBadge tier={message.votingPower} />
                    
                    <div className="flex items-center gap-1 text-sm text-gray-500">
                      <Clock className="w-4 h-4" />
-                     {post.timeAgo}
+                     {message.timeAgo}
                    </div>
                  </div>
                  
                  <p className="text-gray-300 leading-relaxed">
-                   {post.content}
+                   {message.content}
                  </p>
                </CardContent>
              </Card>
@@ -273,13 +187,13 @@ export default function Home() {
            
            {/* Loading indicator and infinite scroll trigger */}
            <div ref={loadingRef} className="flex justify-center py-8">
-             {isLoading && (
+             {isLoadingMore && (
                <div className="flex items-center gap-2 text-gray-500">
                  <Loader2 className="w-5 h-5 animate-spin" />
                  <span>Loading more messages...</span>
                </div>
              )}
-             {!hasMore && displayedPosts.length > 0 && (
+             {!hasMore && messages.length > 0 && (
                <div className="text-gray-500 text-center">
                  <p>You've reached the end! No more messages to load.</p>
                </div>

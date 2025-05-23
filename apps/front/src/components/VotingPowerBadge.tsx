@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 
-export type VotingPowerTier = '>1k' | '>10k' | '>50k'
+export type VotingPowerTier = '>100' | '>1k' | '>10k' | '>50k'
 
 interface VotingPowerBadgeProps {
   tier: VotingPowerTier
@@ -16,6 +16,8 @@ export function VotingPowerBadge({ tier, className = '' }: VotingPowerBadgeProps
         return 'bg-orange-500/10 text-orange-600 border-orange-500/20'
       case '>1k':
         return 'bg-blue-500/10 text-blue-600 border-blue-500/20'
+      case '>100':
+        return 'bg-purple-500/10 text-purple-600 border-purple-500/20'
       default:
         return 'bg-gray-500/10 text-gray-600 border-gray-500/20'
     }
@@ -31,7 +33,7 @@ export function VotingPowerBadge({ tier, className = '' }: VotingPowerBadgeProps
 }
 
 // Helper function to get all valid voting power tiers
-export const VOTING_POWER_TIERS: VotingPowerTier[] = ['>1k', '>10k', '>50k']
+export const VOTING_POWER_TIERS: VotingPowerTier[] = ['>100', '>1k', '>10k', '>50k']
 
 // Helper function to get a random tier (for demo purposes)
 export const getRandomVotingPowerTier = (): VotingPowerTier => {
