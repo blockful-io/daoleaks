@@ -10,7 +10,7 @@ import { baseSepolia } from 'viem/chains'
 import Header from '@/components/Header'
 import { VotingPowerBadge } from '@/components/VotingPowerBadge'
 import { useSignMessage } from '@/lib/proof/use-sign-message'
-import { useENSVotingPower } from '@/lib/use-voting-power'
+import { useVotingPower } from '@/lib/use-voting-power'
 import { getStorageProofForAccount } from '@/lib/proof/storage-proof'
 import { createBackend, generateWitness, generateProof, verifyProof } from '@/lib/proof/generate-proof'
 import { convertSignatureToNoirInputs } from '@/lib/proof/signature-utils'
@@ -47,7 +47,7 @@ export default function CastMessage() {
     transport: http(rpcUrl)
   })
 
-  // Get ENS voting power for the connected wallet
+  // Get voting power for the connected wallet
   const { 
     votingPower, 
     tier: userTier, 
@@ -55,7 +55,7 @@ export default function CastMessage() {
     isLoading: isLoadingVotingPower, 
     error: votingPowerError, 
     isEligible 
-  } = useENSVotingPower(address as `0x${string}`)
+  } = useVotingPower(address as `0x${string}`)
 
   // Setup message signing with domain parameters for DAO Leaks
   const { 
@@ -382,30 +382,30 @@ export default function CastMessage() {
                     {!isConnected 
                       ? 'Wallet Not Connected'
                       : isLoadingVotingPower 
-                        ? 'Checking ENS Voting Power...' 
+                        ? 'Checking Voting Power...' 
                         : isEligible 
-                          ? 'ENS Requirements Met' 
-                          : 'ENS Requirements Not Met'
+                          ? 'Requirements Met' 
+                          : 'Requirements Not Met'
                     }
                   </h3>
                   
                   {!isConnected ? (
                     <p className="text-gray-400 text-sm leading-relaxed">
-                      Connect your wallet to check your ENS voting power and eligibility for anonymous messaging.
+                      Connect your wallet to check your voting power and eligibility for anonymous messaging.
                     </p>
                   ) : isLoadingVotingPower ? (
                     <p className="text-blue-200 text-sm leading-relaxed">
-                      Loading your ENS voting power from the blockchain...
+                      Loading your voting power from the blockchain...
                     </p>
                   ) : votingPower !== undefined ? (
                     <div className="space-y-2">
                       <p className={`text-sm leading-relaxed ${
                         isEligible ? 'text-green-200' : 'text-red-200'
                       }`}>
-                        Your wallet has <span className="font-mono font-semibold">{Math.round(votingPower).toLocaleString()}</span> ENS voting power. {
+                        Your wallet has <span className="font-mono font-semibold">{Math.round(votingPower).toLocaleString()}</span> voting power. {
                           isEligible 
                             ? 'You can cast anonymous messages!' 
-                            : 'You need at least 1,000 ENS voting power to cast messages.'
+                            : 'You need at least 1k voting power to cast messages.'
                         }
                       </p>
                       {userTier && (
@@ -419,7 +419,7 @@ export default function CastMessage() {
                     </div>
                   ) : (
                     <p className="text-amber-200 text-sm leading-relaxed">
-                      Unable to load ENS voting power. Please try refreshing or check your network connection.
+                      Unable to load voting power. Please try refreshing or check your network connection.
                     </p>
                   )}
                 </div>
@@ -432,7 +432,7 @@ export default function CastMessage() {
             <CardContent className="p-4">
               <h3 className="font-semibold text-white mb-3">Anonymous Tier System</h3>
               <p className="text-gray-400 text-sm mb-4">
-                Messages are categorized anonymously based on ENS voting power:
+                Messages are categorized anonymously based on voting power:
               </p>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -526,9 +526,9 @@ export default function CastMessage() {
                       {relayMutation.isPending
                         ? 'Submitting your anonymous message to the blockchain via relay service...'
                         : isGeneratingZKProof 
-                          ? 'Creating cryptographic proof to verify your ENS voting power while keeping your identity anonymous. This may take a few moments...'
+                          ? 'Creating cryptographic proof to verify your voting power while keeping your identity anonymous. This may take a few moments...'
                           : isGeneratingStorageProof
-                            ? 'Fetching blockchain storage proof to verify your ENS voting power...'
+                            ? 'Fetching blockchain storage proof to verify your voting power...'
                             : 'Please sign the message in your wallet to authenticate and proceed with proof generation...'
                       }
                     </p>
@@ -561,7 +561,7 @@ export default function CastMessage() {
               : isLoadingVotingPower
                 ? 'Checking Eligibility...'
               : !isEligible
-                ? 'Insufficient ENS Voting Power'
+                ? 'Insufficient Voting Power'
               : relayMutation.isPending
                 ? 'Submitting to Blockchain...'
               : isGeneratingZKProof
@@ -579,7 +579,7 @@ export default function CastMessage() {
           {/* Privacy Notice */}
           <div className="text-center">
             <p className="text-xs text-gray-500">
-              Your identity remains anonymous. Only your ENS voting power tier is revealed.
+              Your identity remains anonymous. Only your voting power tier is revealed.
             </p>
           </div>
         </div>

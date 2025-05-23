@@ -17,7 +17,7 @@ const ERC20_VOTES_ABI = [
   },
 ] as const
 
-export interface ENSVotingPowerResult {
+export interface VotingPowerResult {
   votingPower: number | undefined
   tier: VotingPowerTier | undefined
   tierRawValue: number[] | undefined
@@ -26,7 +26,7 @@ export interface ENSVotingPowerResult {
   isEligible: boolean
 }
 
-export function useENSVotingPower(address?: `0x${string}`): ENSVotingPowerResult {
+export function useVotingPower(address?: `0x${string}`): VotingPowerResult {
   const {
     data: rawVotingPower,
     isLoading,
