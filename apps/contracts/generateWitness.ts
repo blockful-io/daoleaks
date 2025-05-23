@@ -4,7 +4,7 @@ import { Noir } from '@noir-lang/noir_js';
 import { CompiledCircuit } from '@noir-lang/types';
 
 import { keccak256, concat, pad, toHex, http, createPublicClient, hexToBigInt, hashTypedData, recoverPublicKey, toBytes, createWalletClient } from "viem";
-import { mainnet } from "viem/chains";
+import { baseSepolia, mainnet } from "viem/chains";
 
 import fs from 'fs';
 import path from 'path';
@@ -81,28 +81,37 @@ function calculateArrayElementSlot(arraySlot: `0x${string}`, index: number): `0x
     return elementSlot;
 }
 
-async function generateSignatureFromPrivateKey(privateKey: `0x${string}`, messageHash: `0x${string}`): Promise<`0x${string}`> {
+async function signMessage(message: string, privateKey: `0x${string}`) {
+    // Create account from private key
     const account = privateKeyToAccount(privateKey);
     
-    // Sign the message hash directly
-    return await account.signMessage({ message: { raw: messageHash } });
+    // Hash the typed data first
+    const hash = hashTypedData({
+        domain,
+        types,
+        primaryType: 'Message',
+        message: {
+            message: message
+        }
+    });
+
+    // Sign the hash directly using the account's signMessage method
+    const signature = await account.signMessage({
+        message: { raw: hash }
+    });
+
+    return signature;
 }
 
 //hash data using EIP-712 structured data format
 // Using the same types defined in the contract
-// const domain = {
-//     name: 'DaoLeaks',
-//     version: '1',
-//     chainId: 31337,
-//     verifyingContract: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266' as `0x${string}`
-//   };
-  
-  const domain = {
+const domain = {
     name: 'DaoLeaks',
     version: '1',
     chainId: 84532,
-    verifyingContract: '0xeF72FD35C345b2f0541e5E05C69A40Def7713C18' as `0x${string}`
+    verifyingContract: '0x65cC4D5f790dF736cD54d675d9280c056d640b22' as `0x${string}`
   };
+  
   // Define the types for the Message struct
   const types = {
     Message: [
@@ -142,10 +151,8 @@ async function main() {
     const delegateAccount = "0xCc5fccF9dd64b5E26bc3401407201BDB558C7619";
     // Sample tx from delegate to fetch signature from
     const msg = "Signed by Alice";
-    // const msgHash = "0x7583731d3163b5319d7c2345aba6fcdc80c1e3c3c5f1a480b1abb73ad277d154";
-    // const signature = "0x35867925b39ccf14b96ef446dc608146e40fa54e2642a20cd6c7107fe13e14046e24d53543f7884ab8301c385c79f034f6ca7c51d57ac35c8aba411bba8d4ccf1c";
 
-    const verifyMsgHash = hashTypedData({
+    const msgHash = hashTypedData({
         domain,
         types,
         primaryType: 'Message',
@@ -155,21 +162,18 @@ async function main() {
       });
 
     const privateKey = "0x69df72b7900cec6abe0c0d2e06638ca7ec08e7718bd676208cf046de6d2f6d6d";
-    const signature = await generateSignatureFromPrivateKey(privateKey, verifyMsgHash);
+    const signature = await signMessage(msgHash, privateKey);
+
+    const account = privateKeyToAccount(privateKey)
+    console.log("account.publicKey", account.publicKey)
 
     // const verifyMsgHash = keccak256(toBytes(msg));
 
     const signature_64_bytes = signature.slice(0, -2);
 
-    // if (verifyMsgHash !== msgHash) {
-    //     console.log("Message hash does not match");
-    //     console.log("verifyMsgHash", verifyMsgHash);
-    //     console.log("msgHash", msgHash);
-    //     return;
-    // }
 
     const publicKey = await recoverPublicKey({
-        hash: verifyMsgHash,
+        hash: msgHash,
         signature: signature
     });
     const publicKeyFull = `0x${publicKey.slice(4, 132)}` as `0x${string}`;
@@ -275,7 +279,7 @@ async function main() {
     const packedThresholdHex = thresholdHex + "00000000"; // add 4 bytes of zeros at the end for uint32 (block number)
     const votingPowerThreshold = serialise('0x' + packedThresholdHex, true);
 
-    const msgHashBytes = serialise(verifyMsgHash);
+    const msgHashBytes = serialise(msgHash);
     const signatureBytes = serialise(signature_64_bytes);
     const publicKeyBytes = serialise(publicKeyFull);
 
@@ -291,11 +295,27 @@ async function main() {
         public_key: publicKeyBytes
     }
 
+    console.log('Proof data:', {
+        storage_proof: toHex(checkpointProofData.storage_proof as any),
+        value: toHex(checkpointProofData.value as any),
+        storage_root: toHex(checkpointProofData.storage_root as any),
+        padded_mapping_slot: toHex(paddedMappingSlot as any),
+        padded_array_index: toHex(paddedArrayIndex as any),
+        public_key: toHex(publicKeyBytes as any),
+        message_hash: toHex(msgHashBytes as any),
+        signature: toHex(signatureBytes as any),
+        voting_power_threshold: toHex(votingPowerThreshold as any),
+      })
+
     const concatenatedBytes = [
         ...checkpointProofData.storage_root,
         ...msgHashBytes,
         ...votingPowerThreshold,
     ];
+
+    const storageProofHex = '0x' + Buffer.from(checkpointProofData.storage_proof).toString('hex');
+    console.log("Storage proof hex:", storageProofHex);
+
     const hexString = '0x' + Buffer.from(concatenatedBytes).toString('hex');
     console.log("Concatenated hex string public inputs:", hexString);
 

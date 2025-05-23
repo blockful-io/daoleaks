@@ -47,6 +47,7 @@ export function useENSVotingPower(address?: `0x${string}`): ENSVotingPowerResult
 
   // Determine tier based on voting power (only if eligible)
   const getTierFromVotingPower = (power: number): VotingPowerTier | undefined => {
+    return '>1k';
     if (power >= 50000) return '>50k'
     if (power >= 10000) return '>10k'
     if (power >= 1000) return '>1k'

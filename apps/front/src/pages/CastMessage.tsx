@@ -65,7 +65,7 @@ export default function CastMessage() {
     error: signError,
     getMessageHash
   } = useSignMessage({
-    name: 'DAO Leaks',
+    name: 'DaoLeaks',
     version: '1',
     chainId: parseInt(import.meta.env.VITE_CHAIN_ID),
     verifyingContract: import.meta.env.VITE_DAOLEAKS_CONTRACT_ADDRESS as `0x${string}` // Placeholder contract address
@@ -200,6 +200,18 @@ export default function CastMessage() {
         signature: signatureData.signature,
         voting_power_threshold: userTierRawValue!,
       }
+
+      console.log('Proof data:', {
+        storage_proof: toHex(storageProofData.storage_proof),
+        value: toHex(storageProofData.storage_proof.value),
+        storage_root: toHex(storageProofData.storage_proof.storage_root),
+        padded_mapping_slot: toHex(storageProofData.storage_proof.padded_mapping_slot),
+        padded_array_index: toHex(storageProofData.storage_proof.padded_array_index),
+        public_key: toHex(signatureData.public_key as any),
+        message_hash: toHex(signatureData.message_hash as any),
+        signature: toHex(signatureData.signature as any),
+        voting_power_threshold: toHex(userTierRawValue! as any),
+      })
       
       console.log('Creating backend for depth:', storageProofData.depth)
       const { noir, backend } = await createBackend(storageProofData.depth)
@@ -297,6 +309,8 @@ export default function CastMessage() {
       
       // Step 3: Get message hash for the signed message
       const messageHash = getMessageHash(message)
+      console.log('Message:', message)
+      console.log('Message hash:', messageHash)
       
       // Step 4: Generate zero-knowledge proof
       await generateZKProof(storageProofResult, messageSignature, messageHash, blockNumber)
