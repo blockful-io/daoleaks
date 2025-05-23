@@ -5,15 +5,16 @@ import { useNavigate } from 'react-router-dom'
 import { useAppKitAccount } from '@reown/appkit/react'
 import { useEnsName } from 'wagmi'
 import { useState, useEffect, useCallback } from 'react'
-import { createPublicClient, http, toHex } from 'viem'
-import { mainnet } from 'viem/chains'
+import { createPublicClient, http, toHex, type PublicClient } from 'viem'
+import { baseSepolia } from 'viem/chains'
 import Header from '@/components/Header'
 import { VotingPowerBadge } from '@/components/VotingPowerBadge'
 import { useSignMessage } from '@/lib/proof/use-sign-message'
 import { useENSVotingPower } from '@/lib/use-ens-voting-power'
-import { getStorageProofForAccount, serialise } from '@/lib/proof/storage-proof'
+import { getStorageProofForAccount } from '@/lib/proof/storage-proof'
 import { createBackend, generateWitness, generateProof, verifyProof } from '@/lib/proof/generate-proof'
 import { convertSignatureToNoirInputs } from '@/lib/proof/signature-utils'
+import { useMutation } from '@tanstack/react-query'
 
 export default function CastMessage() {
   const navigate = useNavigate()
@@ -38,12 +39,11 @@ export default function CastMessage() {
   // Environment variables for storage proof
   const contractAddress = import.meta.env.VITE_TOKEN_CONTRACT_ADDRESS as `0x${string}`
   const mappingSlot = parseInt(import.meta.env.VITE_MAPPING_SLOT || '0')
-  const blockNumber = toHex(parseInt(import.meta.env.VITE_BLOCK_NUMBER))
   const rpcUrl = import.meta.env.VITE_RPC_URL
 
   // Create public client for storage proof
   const publicClient = createPublicClient({
-    chain: mainnet,
+    chain: baseSepolia,
     transport: http(rpcUrl)
   })
 
@@ -51,6 +51,7 @@ export default function CastMessage() {
   const { 
     votingPower, 
     tier: userTier, 
+    tierRawValue: userTierRawValue,
     isLoading: isLoadingVotingPower, 
     error: votingPowerError, 
     isEligible 
@@ -66,8 +67,8 @@ export default function CastMessage() {
   } = useSignMessage({
     name: 'DAO Leaks',
     version: '1',
-    chainId: import.meta.env.VITE_CHAIN_ID as number,
-    verifyingContract: '0x0000000000000000000000000000000000000000' as `0x${string}` // Placeholder contract address
+    chainId: parseInt(import.meta.env.VITE_CHAIN_ID),
+    verifyingContract: import.meta.env.VITE_DAOLEAKS_CONTRACT_ADDRESS as `0x${string}` // Placeholder contract address
   })
 
   // Log signature when it becomes available
@@ -77,8 +78,50 @@ export default function CastMessage() {
     }
   }, [signature])
 
+  // Add relay mutation after the other hooks
+  const relayMutation = useMutation({
+    mutationFn: async (payload: {
+      storageRoot: string
+      blockNumber: string
+      timestamp: string
+      proof: string
+      message: string
+      votingPowerLevel: number
+      storageProofDepth: string
+    }) => {
+      const response = await fetch('/api/relay', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to relay message')
+      }
+      
+      return response.json()
+    },
+    onSuccess: (data) => {
+      console.log('Message relayed successfully:', data)
+      setProofSuccess(true)
+      
+      // Navigate back after successful completion
+      setTimeout(() => {
+        navigate('/')
+      }, 2000)
+    },
+    onError: (error) => {
+      console.error('Relay error:', error)
+      setProofError(error instanceof Error ? error.message : 'Failed to relay message')
+      setIsGeneratingZKProof(false)
+    }
+  })
+
   // Generate storage proof for the account
-  const generateStorageProof = useCallback(async () => {
+  const generateStorageProof = useCallback(async (blockNumber: bigint) => {
     if (!address) {
       setProofError('No address available')
       return null
@@ -87,14 +130,15 @@ export default function CastMessage() {
     console.log('Generating storage proof...')
     setIsGeneratingStorageProof(true)
     setProofError(null)
+
     
     try {
       const result = await getStorageProofForAccount(
-        publicClient,
+        publicClient as PublicClient,
         address as `0x${string}`,
         contractAddress,
         mappingSlot,
-        blockNumber
+        toHex(blockNumber)
       )
       
       if (result.isOk()) {
@@ -113,7 +157,7 @@ export default function CastMessage() {
       setIsGeneratingStorageProof(false)
       return null
     }
-  }, [address, publicClient, contractAddress, mappingSlot, blockNumber])
+  }, [address, publicClient, contractAddress, mappingSlot])
 
   // Log signing errors
   useEffect(() => {
@@ -129,11 +173,12 @@ export default function CastMessage() {
     }
   }, [votingPowerError])
 
-  // Generate zero-knowledge proof after both signature and storage proof are ready
+  // Modify the generateZKProof function to call relay API after successful proof generation
   const generateZKProof = useCallback(async (
     storageProofData: any,
     messageSignature: string,
-    messageHash: `0x${string}`
+    messageHash: `0x${string}`,
+    blockNumber: bigint
   ) => {
     console.log('Starting zero-knowledge proof generation...')
     setIsGeneratingZKProof(true)
@@ -142,12 +187,6 @@ export default function CastMessage() {
     try {
       // Convert signature to noir inputs format
       const signatureData = await convertSignatureToNoirInputs(messageSignature, messageHash)
-      
-      // Setup voting power threshold (using minimum threshold for >1k tier)
-      const threshold = 1000n * (10n ** 18n); // 1000 tokens with 18 decimals
-      const thresholdHex = threshold.toString(16).padStart(56, '0'); // pad to 28 bytes for uint224
-      const packedThresholdHex = thresholdHex + "00000000"; // add 4 bytes of zeros for uint32
-      const votingPowerThreshold = serialise('0x' + packedThresholdHex, true);
       
       // Prepare proof data for the circuit
       const proofData = {
@@ -159,7 +198,7 @@ export default function CastMessage() {
         public_key: signatureData.public_key,
         message_hash: signatureData.message_hash,
         signature: signatureData.signature,
-        voting_power_threshold: votingPowerThreshold,
+        voting_power_threshold: userTierRawValue!,
       }
       
       console.log('Creating backend for depth:', storageProofData.depth)
@@ -191,13 +230,37 @@ export default function CastMessage() {
       }
       
       console.log('✅ Zero-knowledge proof generated and verified successfully!')
-      setIsGeneratingZKProof(false)
-      setProofSuccess(true)
       
-      // Navigate back after successful completion
-      setTimeout(() => {
-        navigate('/')
-      }, 2000)
+      // Convert voting power tier to level for the contract
+      const getVotingPowerLevel = (tier: string | undefined): number => {
+        switch (tier) {
+          case '>50k': return 2
+          case '>10k': return 1
+          case '>1k': return 0
+          default: return 0
+        }
+      }
+      
+      // Get current block timestamp
+      const currentBlock = await publicClient.getBlock()
+      
+      // Prepare relay payload
+      const relayPayload = {
+        storageRoot: toHex(new Uint8Array(storageProofData.storage_proof.storage_root)),
+        blockNumber: blockNumber.toString(),
+        timestamp: currentBlock.timestamp.toString(),
+        proof: toHex(proofResult.value.proof),
+        message: message,
+        votingPowerLevel: getVotingPowerLevel(userTier),
+        storageProofDepth: BigInt(storageProofData.depth).toString()
+      }
+
+      console.log('Relay payload:', relayPayload)
+      
+      console.log('Calling relay API with payload:', relayPayload)
+      
+      // Call relay API
+      relayMutation.mutate(relayPayload)
       
       return proofResult.value
       
@@ -207,7 +270,7 @@ export default function CastMessage() {
       setIsGeneratingZKProof(false)
       return null
     }
-  }, [navigate])
+  }, [navigate, message, userTier, publicClient, relayMutation])
 
   const handleCastMessage = async () => {
     if (!message.trim()) return
@@ -223,7 +286,10 @@ export default function CastMessage() {
       
       // Step 2: Generate storage proof
       console.log('Generating storage proof...')
-      const storageProofResult = await generateStorageProof()
+
+      const blockNumber = await publicClient.getBlockNumber()
+
+      const storageProofResult = await generateStorageProof(blockNumber)
       
       if (!storageProofResult) {
         return // Error already handled in generateStorageProof
@@ -233,7 +299,7 @@ export default function CastMessage() {
       const messageHash = getMessageHash(message)
       
       // Step 4: Generate zero-knowledge proof
-      await generateZKProof(storageProofResult, messageSignature, messageHash)
+      await generateZKProof(storageProofResult, messageSignature, messageHash, blockNumber)
       
     } catch (error) {
       console.error('Error in proof flow:', error)
@@ -426,26 +492,30 @@ export default function CastMessage() {
             </Card>
           )}
 
-          {(isSigning || isGeneratingStorageProof || isGeneratingZKProof) && !proofError && !proofSuccess && (
+          {(isSigning || isGeneratingStorageProof || isGeneratingZKProof || relayMutation.isPending) && !proofError && !proofSuccess && (
             <Card className="bg-blue-500/10 border-blue-500/20">
               <CardContent className="p-4">
                 <div className="flex items-start space-x-3">
                   <Loader2 className="w-5 h-5 text-blue-500 animate-spin mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
                     <h3 className="font-semibold text-blue-500 mb-2">
-                      {isGeneratingZKProof 
-                        ? 'Generating Zero-Knowledge Proof...' 
-                        : isGeneratingStorageProof
-                          ? 'Generating Storage Proof...'
-                          : 'Signing Message...'
+                      {relayMutation.isPending
+                        ? 'Submitting to Blockchain...'
+                        : isGeneratingZKProof 
+                          ? 'Generating Zero-Knowledge Proof...' 
+                          : isGeneratingStorageProof
+                            ? 'Generating Storage Proof...'
+                            : 'Signing Message...'
                       }
                     </h3>
                     <p className="text-blue-200 text-sm leading-relaxed">
-                      {isGeneratingZKProof 
-                        ? 'Creating cryptographic proof to verify your ENS voting power while keeping your identity anonymous. This may take a few moments...'
-                        : isGeneratingStorageProof
-                          ? 'Fetching blockchain storage proof to verify your ENS voting power...'
-                          : 'Please sign the message in your wallet to authenticate and proceed with proof generation...'
+                      {relayMutation.isPending
+                        ? 'Submitting your anonymous message to the blockchain via relay service...'
+                        : isGeneratingZKProof 
+                          ? 'Creating cryptographic proof to verify your ENS voting power while keeping your identity anonymous. This may take a few moments...'
+                          : isGeneratingStorageProof
+                            ? 'Fetching blockchain storage proof to verify your ENS voting power...'
+                            : 'Please sign the message in your wallet to authenticate and proceed with proof generation...'
                       }
                     </p>
                   </div>
@@ -457,11 +527,13 @@ export default function CastMessage() {
           {/* Cast Button */}
           <Button
             onClick={handleCastMessage}
-            disabled={!message.trim() || !isConnected || !isEligible || isLoadingVotingPower || isGeneratingStorageProof || isGeneratingZKProof || isSigning}
+            disabled={!message.trim() || !isConnected || !isEligible || isLoadingVotingPower || isGeneratingStorageProof || isGeneratingZKProof || isSigning || relayMutation.isPending}
             className="w-full bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-700 disabled:text-gray-400"
             size="lg"
           >
-            {isGeneratingZKProof ? (
+            {relayMutation.isPending ? (
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            ) : isGeneratingZKProof ? (
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
             ) : isGeneratingStorageProof ? (
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -476,6 +548,8 @@ export default function CastMessage() {
                 ? 'Checking Eligibility...'
               : !isEligible
                 ? 'Insufficient ENS Voting Power'
+              : relayMutation.isPending
+                ? 'Submitting to Blockchain...'
               : isGeneratingZKProof
                 ? 'Generating Zero-Knowledge Proof...'
               : isGeneratingStorageProof

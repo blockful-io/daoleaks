@@ -3,6 +3,7 @@ import { Shield } from 'lucide-react'
 import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
 import { useEnsName } from 'wagmi'
 import { useNavigate } from 'react-router-dom'
+import { useMutation } from '@tanstack/react-query'
 
 export default function Header() {
   const navigate = useNavigate()
@@ -16,6 +17,32 @@ export default function Header() {
     }
   })
 
+  const faucetMutation = useMutation({
+    mutationFn: async ({ account, value }: { account: string; value: string }) => {
+      const response = await fetch('/api/faucet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ account, value })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to get test tokens')
+      }
+      
+      return response.json()
+    },
+    onSuccess: (_) => {
+      console.log('Test tokens requested successfully')
+      alert('Test tokens requested successfully! 🎉')
+    },
+    onError: (error) => {
+      console.error('Error requesting test tokens:', error)
+      alert(`Error requesting test tokens: ${error.message} ❌`)
+    }
+  })
+
   const handleConnect = () => {
     if (isConnected) {
       // Open account view if already connected
@@ -24,6 +51,15 @@ export default function Header() {
       // Open connect view to connect wallet
       open({ view: 'Connect' })
     }
+  }
+
+  const handleGetTestTokens = () => {
+    if (!address) return
+    
+    faucetMutation.mutate({
+      account: address,
+      value: (3000n * 10n**18n).toString()
+    })
   }
 
   return (
@@ -36,18 +72,30 @@ export default function Header() {
             </div>
             <h1 className="text-xl font-bold text-white">DAO_leaks</h1>
           </div>
-          <Button 
-            onClick={handleConnect}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            {isConnected ? (
-              <>
-                {ensName || (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Account')}
-              </>
-            ) : (
-              'Connect'
+          <div className="flex items-center space-x-3">
+            {isConnected && (
+              <Button 
+                variant="ghost"
+                className="border border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white"
+                onClick={handleGetTestTokens}
+                disabled={faucetMutation.isPending}
+              >
+                {faucetMutation.isPending ? 'Getting tokens...' : 'get test tokens'}
+              </Button>
             )}
-          </Button>
+            <Button 
+              onClick={handleConnect}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {isConnected ? (
+                <>
+                  {ensName || (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Account')}
+                </>
+              ) : (
+                'Connect'
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </header>

@@ -14,7 +14,7 @@ const types = {
  * Hooks for signing a message using wagmi
  */
 export function useSignMessage({ name, version, chainId, verifyingContract }: { name: string, version: string, chainId: number, verifyingContract: `0x${string}` }) {
-    const { isPending, signTypedData, signTypedDataAsync, data: signature, error } = useSignTypedData();
+    const { isPending, signTypedDataAsync, data: signature, error } = useSignTypedData();
 
     const domain = {
         name,
