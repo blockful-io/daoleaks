@@ -48,7 +48,7 @@ const customRpcUrls: CustomRpcUrlMap = {
 }
 
 // 4. Create Wagmi Adapter
-const networks = [mainnet, baseSepolia]
+const networks = [baseSepolia, mainnet]
 
 export const wagmiAdapter = new WagmiAdapter({
   networks,
@@ -65,7 +65,7 @@ console.log('wagmiAdapter', wagmiAdapter.wagmiConfig);
 // 5. Create modal
 createAppKit({
   adapters: [wagmiAdapter],
-  networks: [mainnet, baseSepolia],
+  networks: [baseSepolia, mainnet],
   projectId,
   features: {
     analytics: false, // Optional - defaults to your Cloud configuration

@@ -80,7 +80,7 @@ export default function Header() {
                 onClick={handleGetTestTokens}
                 disabled={faucetMutation.isPending}
               >
-                {faucetMutation.isPending ? 'Getting tokens...' : 'get test tokens'}
+                {faucetMutation.isPending ? 'Getting tokens...' : 'Get test tokens'}
               </Button>
             )}
             <Button 
